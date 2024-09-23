@@ -81,3 +81,4 @@ describe('QuestionInput Component', () => {
 //     render(<QuestionInput onSend={mockOnSend} disabled={false} />)
 //    // expect(screen.getByAltText('Send Button')).toBeInTheDocument()
 //   })
+})
