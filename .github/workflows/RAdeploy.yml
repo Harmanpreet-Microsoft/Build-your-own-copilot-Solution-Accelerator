@@ -1,0 +1,81 @@
+name: Deploy Azure Resources:ResearchAssitent
+
+on:
+  push:
+    branches:
+      - main
+    # # Trigger on changes in these specific paths
+    paths:
+      - 'ResearchAssistant/**'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Setup Azure CLI
+        run: |
+          curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
+          az --version  # Verify installation
+
+      - name: Login to Azure
+        run: |
+          az login --service-principal -u ${{ secrets.AZURE_CLIENT_ID }} -p ${{ secrets.AZURE_CLIENT_SECRET }} --tenant ${{ secrets.AZURE_TENANT_ID }}
+
+      - name: Install Bicep CLI
+        run: az bicep install
+      
+      - name: Check and Create Resource Group
+        id: check_create_rg
+        run: |
+          set -e  
+          echo "Checking if resource group exists..."
+          rg_exists=$(az group exists --name pslautomationbyoa2)
+          if [ "$rg_exists" = "false" ]; then
+            echo "Resource group does not exist. Creating..."
+            az group create --name pslautomationbyoa2 --location eastus || { echo "Error creating resource group"; exit 1; }
+          else
+            echo "Resource group already exists."
+          fi
+
+          
+      ## - name: Assign Role to Service Principal
+      #   id: assign_role
+      #   run: |
+      #     set -e
+      #     echo "Assigning Owner role to the service principal..."
+      #     az role assignment create --assignee ${{ secrets.AZURE_CLIENT_ID }} --role "Owner" --scope /subscriptions/${{ secrets.AZURE_SUBSCRIPTION_ID }} || { echo "Error assigning role"; exit 1; }
+          
+      - name: Deploy Bicep Template
+        id: deploy
+        run: |
+          set -e
+          output=$(az deployment group create \
+            --resource-group pslautomationbyoa2 \
+            --template-file ResearchAssistant/Deployment/bicep/main.bicep \
+            --parameters 2>&1) || {
+              echo "Deployment failed. Here is the error mesage:"
+              echo "###########################################################################"              
+              echo "$output" >> $GITHUB_ENV
+              echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"              
+              echo "$output"
+              echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"              
+              exit 1
+            }
+          echo "******************************************************************************" 
+          echo "output=$output" >> $GITHUB_ENV
+          echo "******************************************************************************" 
+      
+      - name: Send Notification on Failure
+        if: failure()
+        run: |
+          output="${{ env.output }}"
+          echo "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"
+          echo "$output"
+          echo "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"
+          curl -X POST "${{ secrets.LOGIC_APP_URL }}" \
+            -H "Content-Type: application/json" \
+            -d "{\"failureMessage\": \"$output\"}"
