@@ -18,7 +18,7 @@ on:
         type: string
 
 env:
-    url: ${{ vars.CLIENT_ADVISOR_URL }}
+    url: ${{ vars.WEBAPP_URL }}
     accelerator_name: "Client Advisor"
 
 jobs:
@@ -44,24 +44,24 @@ jobs:
 
       - name: Validate URL
         run: |
-          if [ -z "${{ env.CA_WEB_URL }}" ]; then
+          if [ -z "${{ env.url }}" ]; then
             echo "ERROR: No URL provided for testing"
             exit 1
   
           fi
 
-          echo "Testing URL: ${{ env.CA_WEB_URL }}"
+          echo "Testing URL: ${{ env.url }}"
 
 
       - name: Wait for Application to be Ready
         run: |
-          echo "Waiting for application to be ready at ${{ env.CA_WEB_URL }} "
+          echo "Waiting for application to be ready at ${{ env.url }} "
           max_attempts=10
           attempt=1
           
           while [ $attempt -le $max_attempts ]; do
             echo "Attempt $attempt: Checking if application is ready..."
-            if curl -f -s "${{ env.CA_WEB_URL }}" > /dev/null; then
+            if curl -f -s "${{ env.url }}" > /dev/null; then
               echo "Application is ready!"
               break
 
