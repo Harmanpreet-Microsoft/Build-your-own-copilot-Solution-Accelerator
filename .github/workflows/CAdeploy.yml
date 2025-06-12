@@ -8,6 +8,11 @@ on:
   schedule:
     - cron: '0 9,21 * * *'  # 9 AM and 9 PM GMT
   workflow_dispatch:
+  workflow_call:  # ✅ Required for reusable workflows
+    inputs:
+      CA_WEB_URL:
+        required: true
+        type: string
 
 env:
   GPT_MIN_CAPACITY: 250
