@@ -131,7 +131,10 @@ jobs:
             --template-file infra/main.bicep \
             --parameters AzureOpenAILocation=${{ env.AZURE_LOCATION }} environmentName=${{ env.SOLUTION_PREFIX }} cosmosLocation=eastus2 gptDeploymentCapacity=${{ env.GPT_MIN_CAPACITY }} embeddingDeploymentCapacity=${{ env.TEXT_EMBEDDING_MIN_CAPACITY }} \
 
-
+      - name: Import Sample Data
+        run: |
+              set -e
+              bash ./infra/scripts/process_sample_data.sh
 
       - name: Get App URLs
         id: get_output
@@ -250,7 +253,7 @@ jobs:
           fi
 
       - name: Wait for resource deletion to complete
-        if: always() && steps.check_create_rg.outcome == 'success'
+        if: always()
         run: |
 
           # List of keyvaults 
