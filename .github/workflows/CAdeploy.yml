@@ -45,8 +45,8 @@ jobs:
           export GPT_MIN_CAPACITY="150"
           export TEXT_EMBEDDING_MIN_CAPACITY="80"
           export AZURE_REGIONS="${{ vars.AZURE_REGIONS_CA }}"
-          chmod +x infra/scripts/checkquota_ca.sh
-          if ! infra/scripts/checkquota_ca.sh; then
+          chmod +x infra/scripts/checkquota.sh
+          if ! infra/scripts/checkquota.sh; then
             if grep -q "No region with sufficient quota found" infra/scripts/checkquota_ca.sh; then
               echo "QUOTA_FAILED=true" >> $GITHUB_ENV
             fi
