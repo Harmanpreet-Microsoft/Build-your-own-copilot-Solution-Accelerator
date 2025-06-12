@@ -131,7 +131,9 @@ jobs:
   e2e-test:
     needs: deploy
     if: needs.deploy.outputs.DEPLOYMENT_SUCCESS == 'true'
-    uses: ./.github/workflows/test-automation.yml
+    uses: ./.github/workflows/test_automation.yml
+
+
     with:
       CA_WEB_URL: ${{ needs.deploy.outputs.WEBAPP_URL }}
     secrets: inherit
