@@ -11,6 +11,11 @@ on:
   schedule:
       - cron: '0 13 * * *'  # Runs at 1 PM UTC 
   workflow_dispatch:
+  workflow_call: 
+    inputs:
+      CA_WEB_URL:
+        required: true
+        type: string
 
 env:
     url: ${{ vars.CLIENT_ADVISOR_URL }}
