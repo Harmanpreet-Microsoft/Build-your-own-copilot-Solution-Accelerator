@@ -162,6 +162,24 @@ jobs:
       - name: Import Sample Data
         run: |
           set -e
+
+          # Assign Cosmos DB role
+          az cosmosdb sql role assignment create \
+            --account-name "$COSMOS_DB_ACCOUNT_NAME" \
+            --resource-group "$RG_NAME" \
+            --role-definition-name "Cosmos DB Built-in Data Contributor" \
+            --scope "/" \
+            --principal-id "$CLIENT_ID" \
+            --role-assignment-id $(uuidgen)
+
+          # Assign Storage Blob Data Contributor role
+          STORAGE_SCOPE=$(az storage account show --name "$STORAGE_ACCOUNT" --resource-group "$RG_NAME" --query id -o tsv)
+          az role assignment create \
+            --assignee "$CLIENT_ID" \
+            --role "Storage Blob Data Contributor" \
+            --scope "$STORAGE_SCOPE"
+
+          # Execute KB Copy Script
           bash ./infra/scripts/process_sample_data.sh \
             "$RG_NAME" \
             "$COSMOS_DB_ACCOUNT_NAME" \
