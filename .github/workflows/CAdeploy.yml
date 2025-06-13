@@ -152,7 +152,65 @@ jobs:
             "$CLIENT_ID" \
             "$CLIENT_NAME"
 
-  
+      - name: Extract Deployment Outputs
+        run: |
+          set -e
+
+          export COSMOS_DB_ACCOUNT_NAME=$(echo '${{ env.DEPLOY_OUTPUT }}' | jq -r '.cosmosdB_ACCOUNT_NAME.value')
+          export STORAGE_ACCOUNT=$(echo '${{ env.DEPLOY_OUTPUT }}' | jq -r '.storagE_ACCOUNT_NAME.value')
+          export STORAGE_CONTAINER=$(echo '${{ env.DEPLOY_OUTPUT }}' | jq -r '.storagE_CONTAINER_NAME.value')
+          export KEYVAULT_NAME=$(echo '${{ env.DEPLOY_OUTPUT }}' | jq -r '.keY_VAULT_NAME.value')
+          export SQL_SERVER=$(echo '${{ env.DEPLOY_OUTPUT }}' | jq -r '.sqldB_SERVER.value')
+          export SQL_DATABASE=$(echo '${{ env.DEPLOY_OUTPUT }}' | jq -r '.sqldB_DATABASE.value')
+          export CLIENT_ID=$(echo '${{ env.DEPLOY_OUTPUT }}' | jq -r '.managedindentitY_WEBAPP_CLIENTID.value')
+          export CLIENT_NAME=$(echo '${{ env.DEPLOY_OUTPUT }}' | jq -r '.managedindentitY_WEBAPP_NAME.value')
+          export RG_NAME=$(echo '${{ env.DEPLOY_OUTPUT }}' | jq -r '.resourcE_GROUP_NAME.value')
+
+          echo "COSMOS_DB_ACCOUNT_NAME=$COSMOS_DB_ACCOUNT_NAME" >> $GITHUB_ENV
+          echo "STORAGE_ACCOUNT=$STORAGE_ACCOUNT" >> $GITHUB_ENV
+          echo "STORAGE_CONTAINER=$STORAGE_CONTAINER" >> $GITHUB_ENV
+          echo "KEYVAULT_NAME=$KEYVAULT_NAME" >> $GITHUB_ENV
+          echo "SQL_SERVER=$SQL_SERVER" >> $GITHUB_ENV
+          echo "SQL_DATABASE=$SQL_DATABASE" >> $GITHUB_ENV
+          echo "CLIENT_ID=$CLIENT_ID" >> $GITHUB_ENV
+          echo "CLIENT_NAME=$CLIENT_NAME" >> $GITHUB_ENV
+          echo "RG_NAME=$RG_NAME" >> $GITHUB_ENV
+
+      - name: Run Post-Deployment Script
+        id: post_deploy
+        run: |
+          set -e
+          az account set --subscription "${{ secrets.AZURE_SUBSCRIPTION_ID }}"
+
+          echo "Running post-deployment script..."
+          az cosmosdb sql role assignment create \
+            --account-name "$COSMOS_DB_ACCOUNT_NAME" \
+            --resource-group "$RG_NAME" \
+            --role-definition-name "Cosmos DB Built-in Data Contributor" \
+            --scope "/" \
+            --principal-id "$CLIENT_ID" \
+            --role-assignment-id $(uuidgen)
+
+          # Assign Storage Blob Data Contributor role
+          STORAGE_SCOPE=$(az storage account show --name "$STORAGE_ACCOUNT" --resource-group "$RG_NAME" --query id -o tsv)
+          az role assignment create \
+            --assignee "$CLIENT_ID" \
+            --role "Storage Blob Data Contributor" \
+            --scope "$STORAGE_SCOPE"
+
+          # Execute KB Copy Script
+          bash ./infra/scripts/process_sample_data.sh \
+            "$RG_NAME" \
+            "$COSMOS_DB_ACCOUNT_NAME" \
+            "$STORAGE_ACCOUNT" \
+            "$STORAGE_CONTAINER" \
+            "$KEYVAULT_NAME" \
+            "$SQL_SERVER" \
+            "$SQL_DATABASE" \
+            "$CLIENT_ID" \
+            "$CLIENT_NAME"
+
+
       - name: Get App URLs
         id: get_output
         run: |
