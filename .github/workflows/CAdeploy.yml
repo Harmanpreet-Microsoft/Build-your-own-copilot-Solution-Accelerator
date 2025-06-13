@@ -146,9 +146,7 @@ jobs:
         run: |
             set -e
 
-            # OPTIONAL: Upgrade Azure CLI and cosmosdb extension to avoid old bugs
-            az upgrade --yes
-            az extension update --name cosmosdb || az extension add --name cosmosdb
+
 
             # Get deployment output
             DEPLOY_OUTPUT=$(az deployment group show \
