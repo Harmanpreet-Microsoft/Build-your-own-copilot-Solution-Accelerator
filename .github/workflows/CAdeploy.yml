@@ -122,7 +122,7 @@ jobs:
           else TAG="default"; fi
           echo "tagname=$TAG" >> $GITHUB_OUTPUT
 
-      - name: Deploy Infra and Import Sample Data (not recommended in prod)
+      - name: Deploy Infra and Import Sample Data 
         run: |
           set -e
           DEPLOY_OUTPUT=$(az deployment group create \
@@ -141,16 +141,6 @@ jobs:
           export CLIENT_NAME=$(echo "$DEPLOY_OUTPUT" | jq -r '.managedindentitY_WEBAPP_NAME.value')
           export RG_NAME=$(echo "$DEPLOY_OUTPUT" | jq -r '.resourcE_GROUP_NAME.value')
 
-          bash ./infra/scripts/process_sample_data.sh \
-            "$RG_NAME" \
-            "$COSMOS_DB_ACCOUNT_NAME" \
-            "$STORAGE_ACCOUNT" \
-            "$STORAGE_CONTAINER" \
-            "$KEYVAULT_NAME" \
-            "$SQL_SERVER" \
-            "$SQL_DATABASE" \
-            "$CLIENT_ID" \
-            "$CLIENT_NAME"
 
       - name: Extract Deployment Outputs
         run: |
