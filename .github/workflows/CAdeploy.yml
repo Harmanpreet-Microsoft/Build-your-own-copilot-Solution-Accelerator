@@ -186,7 +186,7 @@ jobs:
               --scope "/" \
               --principal-id "$CLIENT_ID" \
               --role-assignment-id "$(uuidgen)" \
-              --api-version 2025-04-01
+
 
             STORAGE_SCOPE=$(az storage account show --name "$STORAGE_ACCOUNT" --resource-group "$RG_NAME" --query id -o tsv)
 
