@@ -145,6 +145,7 @@ jobs:
       - name: Extract Deployment Outputs
         run: |
             set -e
+            az account set --subscription "${{ secrets.AZURE_SUBSCRIPTION_ID }}"
 
 
 
@@ -294,7 +295,7 @@ jobs:
     secrets: inherit
 
   cleanup:
-    if: always() && needs.deploy.outputs.RESOURCE_GROUP_NAME != ''
+    if: always() 
     needs: [deploy, e2e-test]
     runs-on: ubuntu-latest
     env:
