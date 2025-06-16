@@ -155,6 +155,17 @@ jobs:
 
           az account set --subscription "${{ secrets.AZURE_SUBSCRIPTION_ID }}"
 
+          # ✅ Resolve Managed Identity Object ID
+          export CLIENT_OBJECT_ID=$(az identity show \
+            --name "$CLIENT_NAME" \
+            --resource-group "$RG_NAME" \
+            --query 'principalId' -o tsv)
+
+          if [[ -z "$CLIENT_OBJECT_ID" ]]; then
+            echo "Error: Could not resolve object ID for managed identity '$CLIENT_NAME'"
+            exit 1
+          fi
+
           # Save to GitHub Actions environment
           echo "COSMOS_DB_ACCOUNT_NAME=$COSMOS_DB_ACCOUNT_NAME" >> $GITHUB_ENV
           echo "STORAGE_ACCOUNT=$STORAGE_ACCOUNT" >> $GITHUB_ENV
@@ -165,6 +176,7 @@ jobs:
           echo "CLIENT_ID=$CLIENT_ID" >> $GITHUB_ENV
           echo "CLIENT_NAME=$CLIENT_NAME" >> $GITHUB_ENV
           echo "RG_NAME=$RG_NAME" >> $GITHUB_ENV
+          echo "CLIENT_OBJECT_ID=$CLIENT_OBJECT_ID" >> $GITHUB_ENV
 
           echo "=== Running Post-Deployment Script ==="
           echo "Importing sample data into the deployed resources..."
@@ -180,7 +192,7 @@ jobs:
           echo "  \"$KEYVAULT_NAME\" \\"
           echo "  \"$SQL_SERVER\" \\"
           echo "  \"$SQL_DATABASE\" \\"
-          echo "  \"$CLIENT_ID\" \\"
+          echo "  \"$CLIENT_OBJECT_ID\" \\"
           echo "  \"$CLIENT_NAME\""
           echo ""
 
@@ -192,10 +204,11 @@ jobs:
             "$KEYVAULT_NAME" \
             "$SQL_SERVER" \
             "$SQL_DATABASE" \
-            "$CLIENT_ID" \
+            "$CLIENT_OBJECT_ID" \
             "$CLIENT_NAME"
 
           echo "=== Post-Deployment Script Completed Successfully ==="
+
 
 
       - name: Get App URLs
