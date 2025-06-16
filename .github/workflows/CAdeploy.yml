@@ -177,6 +177,19 @@ jobs:
           echo "CLIENT_NAME=$CLIENT_NAME" >> $GITHUB_ENV
           echo "RG_NAME=$RG_NAME" >> $GITHUB_ENV
           echo "CLIENT_OBJECT_ID=$CLIENT_OBJECT_ID" >> $GITHUB_ENV
+          az cosmosdb sql role assignment create \
+          --account-name "$COSMOS_DB_ACCOUNT" \
+          --resource-group "$RESOURCE_GROUP" \
+          --role-definition-name "Cosmos DB Built-in Data Contributor" \
+          --scope "/" \
+          --principal-id "$MANAGED_IDENTITY_OBJECT_ID"
+
+          az role assignment create \
+          --assignee "$MANAGED_IDENTITY_OBJECT_ID" \
+          --role "Storage Blob Data Contributor" \
+          --scope "$STORAGE_RESOURCE_ID"
+
+
 
           echo "=== Running Post-Deployment Script ==="
           echo "Importing sample data into the deployed resources..."
