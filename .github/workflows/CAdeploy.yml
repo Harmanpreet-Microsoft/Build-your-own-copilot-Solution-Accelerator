@@ -182,7 +182,8 @@ jobs:
           --resource-group "$RESOURCE_GROUP" \
           --role-definition-name "Cosmos DB Built-in Data Contributor" \
           --scope "/" \
-          --principal-id "$MANAGED_IDENTITY_OBJECT_ID"
+          --principal-id "$MANAGED_IDENTITY_OBJECT_ID"\
+          --api-version 2023-07-01
 
           az role assignment create \
           --assignee "$MANAGED_IDENTITY_OBJECT_ID" \
