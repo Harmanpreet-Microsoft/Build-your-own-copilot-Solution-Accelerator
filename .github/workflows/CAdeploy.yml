@@ -148,17 +148,13 @@ jobs:
           export CLIENT_ID=$(echo "$DEPLOY_OUTPUT" | jq -r '.managedindentitY_WEBAPP_CLIENTID.value')
           export CLIENT_NAME=$(echo "$DEPLOY_OUTPUT" | jq -r '.managedindentitY_WEBAPP_NAME.value')
           export RG_NAME=$(echo "$DEPLOY_OUTPUT" | jq -r '.resourcE_GROUP_NAME.value')
+          az account set --subscription "${{ secrets.AZURE_SUBSCRIPTION_ID }}"
 
-      - name: Extract Deployment Outputs
-        run: |
-            set -e
-            az account set --subscription "${{ secrets.AZURE_SUBSCRIPTION_ID }}"
-
-            # Get deployment output
-            DEPLOY_OUTPUT=$(az deployment group show \
-              --resource-group "${{ env.RESOURCE_GROUP_NAME }}" \
-              --name "deploy_ai_foundry" \
-              --query properties.outputs)
+          # Get deployment output
+          DEPLOY_OUTPUT=$(az deployment group show \
+            --resource-group "${{ env.RESOURCE_GROUP_NAME }}" \
+            --name "deploy_ai_foundry" \
+            --query properties.outputs)
 
             # Export outputs from deployment to environment
             export COSMOS_DB_ACCOUNT_NAME=$(echo "$DEPLOY_OUTPUT" | jq -r '.cosmosdB_ACCOUNT_NAME.value')
@@ -182,9 +178,6 @@ jobs:
             echo "CLIENT_NAME=$CLIENT_NAME" >> $GITHUB_ENV
             echo "RG_NAME=$RG_NAME" >> $GITHUB_ENV
 
-      - name: Run Post-Deployment Script (Import Sample Data)
-        run: |
-            set -e
             echo "=== Running Post-Deployment Script ==="
             echo "Importing sample data into the deployed resources..."
             
