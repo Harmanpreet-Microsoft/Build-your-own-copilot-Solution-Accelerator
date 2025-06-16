@@ -133,6 +133,10 @@ jobs:
       - name: Deploy Infra and Import Sample Data 
         run: |
           set -e
+
+          # Install azd (Azure Developer CLI) - required by process_sample_data.sh
+          curl -fsSL https://aka.ms/install-azd.sh | bash
+
           DEPLOY_OUTPUT=$(az deployment group create \
             --resource-group ${{ env.RESOURCE_GROUP_NAME }} \
             --template-file infra/main.bicep \
@@ -148,69 +152,51 @@ jobs:
           export CLIENT_ID=$(echo "$DEPLOY_OUTPUT" | jq -r '.managedindentitY_WEBAPP_CLIENTID.value')
           export CLIENT_NAME=$(echo "$DEPLOY_OUTPUT" | jq -r '.managedindentitY_WEBAPP_NAME.value')
           export RG_NAME=$(echo "$DEPLOY_OUTPUT" | jq -r '.resourcE_GROUP_NAME.value')
+
           az account set --subscription "${{ secrets.AZURE_SUBSCRIPTION_ID }}"
 
-          # Get deployment output
-          DEPLOY_OUTPUT=$(az deployment group show \
-            --resource-group "${{ env.RESOURCE_GROUP_NAME }}" \
-            --name "deploy_ai_foundry" \
-            --query properties.outputs)
+          # Save to GitHub Actions environment
+          echo "COSMOS_DB_ACCOUNT_NAME=$COSMOS_DB_ACCOUNT_NAME" >> $GITHUB_ENV
+          echo "STORAGE_ACCOUNT=$STORAGE_ACCOUNT" >> $GITHUB_ENV
+          echo "STORAGE_CONTAINER=$STORAGE_CONTAINER" >> $GITHUB_ENV
+          echo "KEYVAULT_NAME=$KEYVAULT_NAME" >> $GITHUB_ENV
+          echo "SQL_SERVER=$SQL_SERVER" >> $GITHUB_ENV
+          echo "SQL_DATABASE=$SQL_DATABASE" >> $GITHUB_ENV
+          echo "CLIENT_ID=$CLIENT_ID" >> $GITHUB_ENV
+          echo "CLIENT_NAME=$CLIENT_NAME" >> $GITHUB_ENV
+          echo "RG_NAME=$RG_NAME" >> $GITHUB_ENV
 
-            # Export outputs from deployment to environment
-            export COSMOS_DB_ACCOUNT_NAME=$(echo "$DEPLOY_OUTPUT" | jq -r '.cosmosdB_ACCOUNT_NAME.value')
-            export STORAGE_ACCOUNT=$(echo "$DEPLOY_OUTPUT" | jq -r '.storagE_ACCOUNT_NAME.value')
-            export STORAGE_CONTAINER=$(echo "$DEPLOY_OUTPUT" | jq -r '.storagE_CONTAINER_NAME.value')
-            export KEYVAULT_NAME=$(echo "$DEPLOY_OUTPUT" | jq -r '.keY_VAULT_NAME.value')
-            export SQL_SERVER=$(echo "$DEPLOY_OUTPUT" | jq -r '.sqldB_SERVER.value')
-            export SQL_DATABASE=$(echo "$DEPLOY_OUTPUT" | jq -r '.sqldB_DATABASE.value')
-            export CLIENT_ID=$(echo "$DEPLOY_OUTPUT" | jq -r '.managedindentitY_WEBAPP_CLIENTID.value')
-            export CLIENT_NAME=$(echo "$DEPLOY_OUTPUT" | jq -r '.managedindentitY_WEBAPP_NAME.value')
-            export RG_NAME=$(echo "$DEPLOY_OUTPUT" | jq -r '.resourcE_GROUP_NAME.value')
+          echo "=== Running Post-Deployment Script ==="
+          echo "Importing sample data into the deployed resources..."
 
-            # Save to GitHub Actions environment
-            echo "COSMOS_DB_ACCOUNT_NAME=$COSMOS_DB_ACCOUNT_NAME" >> $GITHUB_ENV
-            echo "STORAGE_ACCOUNT=$STORAGE_ACCOUNT" >> $GITHUB_ENV
-            echo "STORAGE_CONTAINER=$STORAGE_CONTAINER" >> $GITHUB_ENV
-            echo "KEYVAULT_NAME=$KEYVAULT_NAME" >> $GITHUB_ENV
-            echo "SQL_SERVER=$SQL_SERVER" >> $GITHUB_ENV
-            echo "SQL_DATABASE=$SQL_DATABASE" >> $GITHUB_ENV
-            echo "CLIENT_ID=$CLIENT_ID" >> $GITHUB_ENV
-            echo "CLIENT_NAME=$CLIENT_NAME" >> $GITHUB_ENV
-            echo "RG_NAME=$RG_NAME" >> $GITHUB_ENV
+          chmod +x ./infra/scripts/process_sample_data.sh
 
-            echo "=== Running Post-Deployment Script ==="
-            echo "Importing sample data into the deployed resources..."
-            
-            # Make script executable
-            chmod +x ./infra/scripts/process_sample_data.sh
-            
-            # Display the command being executed for debugging
-            echo "Executing command:"
-            echo "bash ./infra/scripts/process_sample_data.sh \\"
-            echo "  \"${{ env.RG_NAME }}\" \\"
-            echo "  \"${{ env.COSMOS_DB_ACCOUNT_NAME }}\" \\"
-            echo "  \"${{ env.STORAGE_ACCOUNT }}\" \\"
-            echo "  \"${{ env.STORAGE_CONTAINER }}\" \\"
-            echo "  \"${{ env.KEYVAULT_NAME }}\" \\"
-            echo "  \"${{ env.SQL_SERVER }}\" \\"
-            echo "  \"${{ env.SQL_DATABASE }}\" \\"
-            echo "  \"${{ env.CLIENT_ID }}\" \\"
-            echo "  \"${{ env.CLIENT_NAME }}\""
-            echo ""
-            
-            # Run the post-deployment script
-            bash ./infra/scripts/process_sample_data.sh \
-              "${{ env.RG_NAME }}" \
-              "${{ env.COSMOS_DB_ACCOUNT_NAME }}" \
-              "${{ env.STORAGE_ACCOUNT }}" \
-              "${{ env.STORAGE_CONTAINER }}" \
-              "${{ env.KEYVAULT_NAME }}" \
-              "${{ env.SQL_SERVER }}" \
-              "${{ env.SQL_DATABASE }}" \
-              "${{ env.CLIENT_ID }}" \
-              "${{ env.CLIENT_NAME }}"
-            
-            echo "=== Post-Deployment Script Completed Successfully ==="
+          echo "Executing command:"
+          echo "bash ./infra/scripts/process_sample_data.sh \\"
+          echo "  \"$RG_NAME\" \\"
+          echo "  \"$COSMOS_DB_ACCOUNT_NAME\" \\"
+          echo "  \"$STORAGE_ACCOUNT\" \\"
+          echo "  \"$STORAGE_CONTAINER\" \\"
+          echo "  \"$KEYVAULT_NAME\" \\"
+          echo "  \"$SQL_SERVER\" \\"
+          echo "  \"$SQL_DATABASE\" \\"
+          echo "  \"$CLIENT_ID\" \\"
+          echo "  \"$CLIENT_NAME\""
+          echo ""
+
+          bash ./infra/scripts/process_sample_data.sh \
+            "$RG_NAME" \
+            "$COSMOS_DB_ACCOUNT_NAME" \
+            "$STORAGE_ACCOUNT" \
+            "$STORAGE_CONTAINER" \
+            "$KEYVAULT_NAME" \
+            "$SQL_SERVER" \
+            "$SQL_DATABASE" \
+            "$CLIENT_ID" \
+            "$CLIENT_NAME"
+
+          echo "=== Post-Deployment Script Completed Successfully ==="
+
 
       - name: Get App URLs
         id: get_output
