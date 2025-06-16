@@ -182,33 +182,6 @@ jobs:
             echo "CLIENT_NAME=$CLIENT_NAME" >> $GITHUB_ENV
             echo "RG_NAME=$RG_NAME" >> $GITHUB_ENV
 
-      - name: Configure Role Assignments
-        run: |
-            set -e
-            echo "Setting up role assignments for managed identity..."
-
-            # Post-deployment role assignments
-            az cosmosdb sql role assignment create \
-              --account-name "${{ env.COSMOS_DB_ACCOUNT_NAME }}" \
-              --resource-group "${{ env.RG_NAME }}" \
-              --role-definition-name "Cosmos DB Built-in Data Contributor" \
-              --scope "/" \
-              --principal-id "${{ env.CLIENT_ID }}" \
-              --role-assignment-id "$(uuidgen)"
-
-            # Get storage account scope for role assignment
-            STORAGE_SCOPE=$(az storage account show \
-              --name "${{ env.STORAGE_ACCOUNT }}" \
-              --resource-group "${{ env.RG_NAME }}" \
-              --query id -o tsv)
-
-            az role assignment create \
-              --assignee "${{ env.CLIENT_ID }}" \
-              --role "Storage Blob Data Contributor" \
-              --scope "$STORAGE_SCOPE"
-
-            echo "Role assignments completed successfully."
-
       - name: Run Post-Deployment Script (Import Sample Data)
         run: |
             set -e
