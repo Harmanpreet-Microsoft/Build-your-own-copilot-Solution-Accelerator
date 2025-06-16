@@ -143,6 +143,12 @@ jobs:
             --parameters AzureOpenAILocation=${{ env.AZURE_LOCATION }} environmentName=${{ env.SOLUTION_PREFIX }} cosmosLocation=eastus2 gptDeploymentCapacity=${{ env.GPT_MIN_CAPACITY }} embeddingDeploymentCapacity=${{ env.TEXT_EMBEDDING_MIN_CAPACITY }} \
             --query "properties.outputs" -o json)
 
+          echo "Deployment output: $DEPLOY_OUTPUT"
+          if [[ -z "$DEPLOY_OUTPUT" ]]; then
+            echo "Error: Deployment output is empty. Please check the deployment logs."
+            exit 1
+          fi
+
           export COSMOS_DB_ACCOUNT_NAME=$(echo "$DEPLOY_OUTPUT" | jq -r '.cosmosdB_ACCOUNT_NAME.value')
           export STORAGE_ACCOUNT=$(echo "$DEPLOY_OUTPUT" | jq -r '.storagE_ACCOUNT_NAME.value')
           export STORAGE_CONTAINER=$(echo "$DEPLOY_OUTPUT" | jq -r '.storagE_CONTAINER_NAME.value')
